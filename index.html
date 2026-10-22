@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Atividades - Lençóis Paulista</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        .active-tab {
+            border-bottom: 3px solid #16a34a;
+            color: #16a34a;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans pb-20">
+
+    <!-- Header -->
+    <header class="bg-emerald-700 text-white p-4 shadow-md sticky top-0 z-50">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-seedling"></i> Lençóis Paulista
+                </h1>
+                <p class="text-xs text-emerald-100">Período: 21/10/26 a 20/11/26</p>
+            </div>
+            <div id="status-badge" class="bg-emerald-800 text-emerald-200 text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Sincronizado</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Container -->
+    <main class="max-w-md mx-auto p-4 space-y-4">
+
+        <!-- Navigation Tabs -->
+        <nav class="flex bg-white rounded-xl shadow-sm overflow-hidden text-sm border border-slate-200">
+            <button onclick="switchTab('lp1')" id="tab-lp1" class="flex-1 py-3 text-center font-medium active-tab transition-all">LP1</button>
+            <button onclick="switchTab('lp2')" id="tab-lp2" class="flex-1 py-3 text-center font-medium text-slate-500 transition-all">LP2</button>
+            <button onclick="switchTab('checklists')" id="tab-checklists" class="flex-1 py-3 text-center font-medium text-slate-500 transition-all">Checklists</button>
+        </nav>
+
+        <!-- LP1 Section -->
+        <section id="sec-lp1" class="space-y-4">
+            <!-- MJC LP1 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-emerald-600"></i> MJC - LP1
+                    </h2>
+                    <span class="text-xs bg-slate-100 font-bold px-2 py-1 rounded text-slate-600">Total: 18</span>
+                </div>
+                <div class="grid grid-cols-5 gap-2">
+                    <script>
+                        for(let i=1; i<=5; i++) {
+                            document.write(`
+                                <div class="text-center">
+                                    <label class="text-xs font-semibold text-slate-500 block mb-1">Sem ${i}</label>
+                                    <input type="number" id="lp1-mjc-s${i}" onchange="updateData()" class="w-full text-center border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="0">
+                                </div>
+                            `);
+                        }
+                    </script>
+                </div>
+            </div>
+
+            <!-- Plantio LP1 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-wheat-awn text-emerald-600"></i> PLANTIO - LP1
+                    </h2>
+                    <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">Meta: 25 Band.</span>
+                </div>
+                <div class="grid grid-cols-5 gap-2 mb-3">
+                    <script>
+                        for(let i=1; i<=5; i++) {
+                            document.write(`
+                                <div class="text-center">
+                                    <label class="text-xs font-semibold text-slate-500 block mb-1">Sem ${i}</label>
+                                    <input type="number" id="lp1-plantio-s${i}" value="5" onchange="updateData()" class="w-full text-center border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                </div>
+                            `);
+                        }
+                    </script>
+                </div>
+                <!-- Progress Bar -->
+                <div>
+                    <div class="flex justify-between text-xs text-slate-500 mb-1">
+                        <span>Progresso da Meta</span>
+                        <span id="lp1-plantio-progress-text">25 / 25</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2.5">
+                        <div id="lp1-plantio-bar" class="bg-emerald-600 h-2.5 rounded-full" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1ª Seleção LP1 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-filter text-emerald-600"></i> 1ª SELEÇÃO - LP1
+                    </h2>
+                    <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">Meta: 10 Band.</span>
+                </div>
+                <div class="grid grid-cols-5 gap-2 mb-3">
+                    <script>
+                        for(let i=1; i<=5; i++) {
+                            document.write(`
+                                <div class="text-center">
+                                    <label class="text-xs font-semibold text-slate-500 block mb-1">Sem ${i}</label>
+                                    <input type="number" id="lp1-selecao-s${i}" value="2" onchange="updateData()" class="w-full text-center border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                </div>
+                            `);
+                        }
+                    </script>
+                </div>
+                <!-- Progress Bar -->
+                <div>
+                    <div class="flex justify-between text-xs text-slate-500 mb-1">
+                        <span>Progresso da Meta</span>
+                        <span id="lp1-selecao-progress-text">10 / 10</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2.5">
+                        <div id="lp1-selecao-bar" class="bg-emerald-600 h-2.5 rounded-full" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LP2 Section -->
+        <section id="sec-lp2" class="space-y-4 hidden">
+            <!-- MJC LP2 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-emerald-600"></i> MJC - LP2
+                    </h2>
+                    <span class="text-xs bg-slate-100 font-bold px-2 py-1 rounded text-slate-600">Total: 33</span>
+                </div>
+                <div class="grid grid-cols-5 gap-2">
+                    <script>
+                        for(let i=1; i<=5; i++) {
+                            document.write(`
+                                <div class="text-center">
+                                    <label class="text-xs font-semibold text-slate-500 block mb-1">Sem ${i}</label>
+                                    <input type="number" id="lp2-mjc-s${i}" onchange="updateData()" class="w-full text-center border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="0">
+                                </div>
+                            `);
+                        }
+                    </script>
+                </div>
+            </div>
+
+            <!-- Plantio LP2 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-wheat-awn text-emerald-600"></i> PLANTIO - LP2
+                    </h2>
+                    <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">Meta: 25 Band.</span>
+                </div>
+                <div class="grid grid-cols-5 gap-2 mb-3">
+                    <script>
+                        for(let i=1; i<=5; i++) {
+                            document.write(`
+                                <div class="text-center">
+                                    <label class="text-xs font-semibold text-slate-500 block mb-1">Sem ${i}</label>
+                                    <input type="number" id="lp2-plantio-s${i}" value="5" onchange="updateData()" class="w-full text-center border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                </div>
+                            `);
+                        }
+                    </script>
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs text-slate-500 mb-1">
+                        <span>Progresso da Meta</span>
+                        <span id="lp2-plantio-progress-text">25 / 25</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2.5">
+                        <div id="lp2-plantio-bar" class="bg-emerald-600 h-2.5 rounded-full" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1ª Seleção LP2 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="font-bold text-slate-700 text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-filter text-emerald-600"></i> 1ª SELEÇÃO - LP2
+                    </h2>
+                    <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">Meta: 10 Band.</span>
+                </div>
+                <div class="grid grid-cols-5 gap-2 mb-3">
+                    <script>
+                        for(let i=1; i<=5; i++) {
+                            document.write(`
+                                <div class="text-center">
+                                    <label class="text-xs font-semibold text-slate-500 block mb-1">Sem ${i}</label>
+                                    <input type="number" id="lp2-selecao-s${i}" value="2" onchange="updateData()" class="w-full text-center border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                </div>
+                            `);
+                        }
+                    </script>
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs text-slate-500 mb-1">
+                        <span>Progresso da Meta</span>
+                        <span id="lp2-selecao-progress-text">10 / 10</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2.5">
+                        <div id="lp2-selecao-bar" class="bg-emerald-600 h-2.5 rounded-full" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Checklists Section -->
+        <section id="sec-checklists" class="space-y-4 hidden">
+            <!-- MIPD CV Controls -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="font-bold text-slate-700 text-lg mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-bug text-emerald-600"></i> MIPD Casa de Vegetação
+                </h2>
+                
+                <div class="space-y-4">
+                    <!-- MIPD LP1 -->
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">MIPD CV LP1</span>
+                        <div class="grid grid-cols-5 gap-1.5">
+                            <script>
+                                for(let i=1; i<=5; i++) {
+                                    document.write(`
+                                        <button id="mipd-lp1-s${i}" onclick="toggleCheck('mipd-lp1-s${i}')" class="py-2 px-1 text-xs border rounded-lg flex flex-col items-center justify-center gap-1 transition-all bg-slate-50 border-slate-200">
+                                            <span>Sem ${i}</span>
+                                            <i class="fa-solid fa-circle-check text-slate-300 text-base"></i>
+                                        </button>
+                                    `);
+                                }
+                            </script>
+                        </div>
+                    </div>
+
+                    <!-- MIPD LP2 -->
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">MIPD CV LP2</span>
+                        <div class="grid grid-cols-5 gap-1.5">
+                            <script>
+                                for(let i=1; i<=5; i++) {
+                                    document.write(`
+                                        <button id="mipd-lp2-s${i}" onclick="toggleCheck('mipd-lp2-s${i}')" class="py-2 px-1 text-xs border rounded-lg flex flex-col items-center justify-center gap-1 transition-all bg-slate-50 border-slate-200">
+                                            <span>Sem ${i}</span>
+                                            <i class="fa-solid fa-circle-check text-slate-300 text-base"></i>
+                                        </button>
+                                    `);
+                                }
+                            </script>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Checklists LP1 & LP2 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Checklist LP1 -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-700 text-md mb-3 pb-2 border-b flex justify-between items-center">
+                        <span>Check List LP1</span>
+                        <i class="fa-solid fa-clipboard-check text-emerald-600"></i>
+                    </h3>
+                    <div class="space-y-2 text-sm" id="checklist-lp1-container">
+                        <!-- Items rendered via JS -->
+                    </div>
+                </div>
+
+                <!-- Checklist LP2 -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-700 text-md mb-3 pb-2 border-b flex justify-between items-center">
+                        <span>Check List LP2</span>
+                        <i class="fa-solid fa-clipboard-check text-emerald-600"></i>
+                    </h3>
+                    <div class="space-y-2 text-sm" id="checklist-lp2-container">
+                        <!-- Items rendered via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Actions Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 shadow-lg z-50">
+        <div class="max-w-md mx-auto flex gap-2">
+            <button onclick="exportToWhatsApp()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all active:scale-95">
+                <i class="fa-brands fa-whatsapp text-xl"></i>
+                <span>Gerar Relatório WhatsApp</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        // Data State
+        const state = {
+            lp1: {
+                mjc: [0,0,0,0,0],
+                plantio: [5,5,5,5,5],
+                selecao: [2,2,2,2,2]
+            },
+            lp2: {
+                mjc: [0,0,0,0,0],
+                plantio: [5,5,5,5,5],
+                selecao: [2,2,2,2,2]
+            },
+            mipd: {
+                lp1: [true, false, false, false, false],
+                lp2: [false, false, false, false, false]
+            },
+            checklists: {
+                lp1: { "IRRIGAÇÃO": false, "MINI JARDIM": false, "CASA DE VEGETAÇÃO": false, "CASA DE SOMBRA": false, "1° SELEÇÃO": false, "2° SELEÇÃO": false, "EXPEDIÇÃO": false },
+                lp2: { "IRRIGAÇÃO": false, "MINI JARDIM": false, "CASA DE VEGETAÇÃO": false, "CASA DE SOMBRA": false, "1° SELEÇÃO": false, "2° SELEÇÃO": false, "EXPEDIÇÃO": false }
+            }
+        };
+
+        const checklistItems = ["IRRIGAÇÃO", "MINI JARDIM", "CASA DE VEGETAÇÃO", "CASA DE SOMBRA", "1° SELEÇÃO", "2° SELEÇÃO", "EXPEDIÇÃO"];
+
+        // Init App
+        document.addEventListener("DOMContentLoaded", () => {
+            renderChecklists();
+            loadLocalStorage();
+            updateUI();
+        });
+
+        function switchTab(tab) {
+            ['lp1', 'lp2', 'checklists'].forEach(t => {
+                document.getElementById(`sec-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('active-tab');
+                document.getElementById(`tab-${t}`).classList.add('text-slate-500');
+            });
+
+            document.getElementById(`sec-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('active-tab');
+            document.getElementById(`tab-${tab}`).classList.remove('text-slate-500');
+        }
+
+        function renderChecklists() {
+            ['lp1', 'lp2'].forEach(lp => {
+                const container = document.getElementById(`checklist-${lp}-container`);
+                container.innerHTML = '';
+                checklistItems.forEach(item => {
+                    container.innerHTML += `
+                        <label class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-100">
+                            <span class="text-slate-700 font-medium">${item}</span>
+                            <input type="checkbox" id="chk-${lp}-${item}" onchange="toggleChecklist('${lp}', '${item}')" class="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 border-slate-300">
+                        </label>
+                    `;
+                });
+            });
+        }
+
+        function toggleCheck(id) {
+            const btn = document.getElementById(id);
+            const icon = btn.querySelector('i');
+            
+            const isChecked = icon.classList.contains('text-emerald-600');
+            if (isChecked) {
+                icon.classList.remove('text-emerald-600');
+                icon.classList.add('text-slate-300');
+                btn.classList.remove('bg-emerald-50', 'border-emerald-300');
+                btn.classList.add('bg-slate-50', 'border-slate-200');
+            } else {
+                icon.classList.remove('text-slate-300');
+                icon.classList.add('text-emerald-600');
+                btn.classList.add('bg-emerald-50', 'border-emerald-300');
+                btn.classList.remove('bg-slate-50', 'border-slate-200');
+            }
+            saveStateFromUI();
+        }
+
+        function toggleChecklist(lp, item) {
+            state.checklists[lp][item] = document.getElementById(`chk-${lp}-${item}`).checked;
+            saveLocalStorage();
+        }
+
+        function updateData() {
+            saveStateFromUI();
+            updateProgressBars();
+        }
+
+        function saveStateFromUI() {
+            for(let i=1; i<=5; i++) {
+                state.lp1.mjc[i-1] = Number(document.getElementById(`lp1-mjc-s${i}`).value) || 0;
+                state.lp1.plantio[i-1] = Number(document.getElementById(`lp1-plantio-s${i}`).value) || 0;
+                state.lp1.selecao[i-1] = Number(document.getElementById(`lp1-selecao-s${i}`).value) || 0;
+
+                state.lp2.mjc[i-1] = Number(document.getElementById(`lp2-mjc-s${i}`).value) || 0;
+                state.lp2.plantio[i-1] = Number(document.getElementById(`lp2-plantio-s${i}`).value) || 0;
+                state.lp2.selecao[i-1] = Number(document.getElementById(`lp2-selecao-s${i}`).value) || 0;
+
+                state.mipd.lp1[i-1] = document.getElementById(`mipd-lp1-s${i}`).querySelector('i').classList.contains('text-emerald-600');
+                state.mipd.lp2[i-1] = document.getElementById(`mipd-lp2-s${i}`).querySelector('i').classList.contains('text-emerald-600');
+            }
+            saveLocalStorage();
+            updateProgressBars();
+        }
+
+        function updateProgressBars() {
+            // LP1
+            const lp1PlantioTotal = state.lp1.plantio.reduce((a, b) => a + b, 0);
+            document.getElementById('lp1-plantio-progress-text').innerText = `${lp1PlantioTotal} / 25`;
+            document.getElementById('lp1-plantio-bar').style.width = `${Math.min(100, (lp1PlantioTotal/25)*100)}%`;
+
+            const lp1SelecaoTotal = state.lp1.selecao.reduce((a, b) => a + b, 0);
+            document.getElementById('lp1-selecao-progress-text').innerText = `${lp1SelecaoTotal} / 10`;
+            document.getElementById('lp1-selecao-bar').style.width = `${Math.min(100, (lp1SelecaoTotal/10)*100)}%`;
+
+            // LP2
+            const lp2PlantioTotal = state.lp2.plantio.reduce((a, b) => a + b, 0);
+            document.getElementById('lp2-plantio-progress-text').innerText = `${lp2PlantioTotal} / 25`;
+            document.getElementById('lp2-plantio-bar').style.width = `${Math.min(100, (lp2PlantioTotal/25)*100)}%`;
+
+            const lp2SelecaoTotal = state.lp2.selecao.reduce((a, b) => a + b, 0);
+            document.getElementById('lp2-selecao-progress-text').innerText = `${lp2SelecaoTotal} / 10`;
+            document.getElementById('lp2-selecao-bar').style.width = `${Math.min(100, (lp2SelecaoTotal/10)*100)}%`;
+        }
+
+        function updateUI() {
+            for(let i=1; i<=5; i++) {
+                document.getElementById(`lp1-mjc-s${i}`).value = state.lp1.mjc[i-1] || '';
+                document.getElementById(`lp1-plantio-s${i}`).value = state.lp1.plantio[i-1];
+                document.getElementById(`lp1-selecao-s${i}`).value = state.lp1.selecao[i-1];
+
+                document.getElementById(`lp2-mjc-s${i}`).value = state.lp2.mjc[i-1] || '';
+                document.getElementById(`lp2-plantio-s${i}`).value = state.lp2.plantio[i-1];
+                document.getElementById(`lp2-selecao-s${i}`).value = state.lp2.selecao[i-1];
+
+                setMipdBtn('mipd-lp1-s' + i, state.mipd.lp1[i-1]);
+                setMipdBtn('mipd-lp2-s' + i, state.mipd.lp2[i-1]);
+            }
+
+            checklistItems.forEach(item => {
+                document.getElementById(`chk-lp1-${item}`).checked = !!state.checklists.lp1[item];
+                document.getElementById(`chk-lp2-${item}`).checked = !!state.checklists.lp2[item];
+            });
+
+            updateProgressBars();
+        }
+
+        function setMipdBtn(id, checked) {
+            const btn = document.getElementById(id);
+            const icon = btn.querySelector('i');
+            if (checked) {
+                icon.classList.remove('text-slate-300');
+                icon.classList.add('text-emerald-600');
+                btn.classList.add('bg-emerald-50', 'border-emerald-300');
+                btn.classList.remove('bg-slate-50', 'border-slate-200');
+            } else {
+                icon.classList.remove('text-emerald-600');
+                icon.classList.add('text-slate-300');
+                btn.classList.remove('bg-emerald-50', 'border-emerald-300');
+                btn.classList.add('bg-slate-50', 'border-slate-200');
+            }
+        }
+
+        function saveLocalStorage() {
+            localStorage.setItem('lencois_app_data', JSON.stringify(state));
+        }
+
+        function loadLocalStorage() {
+            const saved = localStorage.getItem('lencois_app_data');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    Object.assign(state, parsed);
+                } catch(e) {
+                    console.error("Erro ao carregar dados salvos", e);
+                }
+            }
+        }
+
+        function exportToWhatsApp() {
+            const formatMjc = (arr) => arr.map((v, i) => `> Semana ${i+1} = ${v || ''}`).join('
+');
+            const formatPlantio = (arr) => arr.map((v, i) => `> Semana ${i+1} = ${v || ''}`).join('
+');
+            const formatSelecao = (arr) => arr.map((v, i) => `> Semana ${i+1} = ${v || ''} ${v > 0 ? '✅' : ''}`).join('
+');
+            const formatMipd = (arr) => arr.map((v, i) => `> Semana ${i+1} ${v ? '✅' : ''}`).join('
+');
+            const formatChecklist = (obj) => Object.entries(obj).map(([k, v]) => `${k} ${v ? '✅' : ''}`).join('
+');
+
+            const text = `21/10/26 a 20/11/26
+
+*Lençóis Paulista* SEMANAL
+
+*LP1*
+
+*MJC* 18 total
+${formatMjc(state.lp1.mjc)}
+
+*PLANTIO*
+${formatPlantio(state.lp1.plantio)}
+> Meta Mês = 25 Bandejas 
+
+*1 SELEÇÃO* 
+${formatSelecao(state.lp1.selecao)}
+> Meta Mês = 10 Bandejas 
+______________________________
+
+*LP2*
+*MJC* 33 total
+${formatMjc(state.lp2.mjc)}
+
+*PLANTIO*
+${formatPlantio(state.lp2.plantio)}
+> Meta Mês = 25 Bandejas
+
+*1 SELEÇÃO*
+${formatSelecao(state.lp2.selecao)}
+> Meta Mês = 10 Bandejas 
+______________________________
+
+*MIPD CV LP1*
+${formatMipd(state.mipd.lp1)}
+
+*CHECK LIST LP1*
+
+${formatChecklist(state.checklists.lp1)}
+______________________________
+
+*MIPD CV LP2*
+${formatMipd(state.mipd.lp2)}
+
+*Check List LP2*
+
+${formatChecklist(state.checklists.lp2)}`;
+
+            const encoded = encodeURIComponent(text);
+            window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+        }
+    </script>
+</body>
+</html>
